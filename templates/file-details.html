@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.11/typed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+    <link rel="icon" href="./images/Portfolio_icon.jpeg" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style4.css') }}">
+    <title>File Details</title>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="max-width">
+            <div class="logo"><a href="{{ url_for('index') }}">Anaphoric <span>Ambiguity Detector</span></a></div>
+        </div>
+    </nav>
+    <section>
+    <section class="home" id="home">
+    <div class="container">
+        <h2>File Details</h2>
+        <div id="fileDetails"></div>
+        <button class="btn btn-back" onclick="goBack()">Back</button>
+    </div>
+</section>
+</section>
+    <script>
+        function getQueryParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                name: params.get('name'),
+                size: params.get('size'),
+                type: params.get('type')
+            };
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function displayFileDetails() {
+            const params = getQueryParams();
+            if (params.name && params.size && params.type) {
+                document.getElementById('fileDetails').innerHTML = 'Detailed File Information:<br>' +
+                    'Name: ' + params.name + '<br>' +
+                    'Size: ' + formatBytes(parseInt(params.size)) + '<br>' +
+                    'Type: ' + params.type;
+            } else {
+                document.getElementById('fileDetails').innerHTML = 'No file details available.';
+            }
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+        window.onload = displayFileDetails;
+    </script>
+</body>
+</html>

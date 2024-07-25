@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.11/typed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+    <link rel="icon" href="./images/Portfolio_icon.jpeg" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style4.css') }}">
+    <title>PreProcess File Information</title>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="max-width">
+            <div class="logo"><a href="{{ url_for('index') }}">Anaphoric <span>Ambiguity Detector</span></a></div>
+        </div>
+    </nav>
+    <section class="home" id="home">
+        <section>
+            <div class="container">
+                <h2>Uploaded File Information</h2>
+                <div class="file-info" id="fileInfo"></div>
+                <div id="preprocessOptions">
+                    <h3>Following are the techniques used in Preprocessing steps:</h3>
+                    <p>Tokenization</p>
+                    <p>Stopword Removal</p>
+                    <p>Lemmatization</p>
+                    <p>Porter Stemming</p>
+                    <p>Suffix Stripping</p>
+                </div>
+                <button class="btn btn-start-preprocessing" onclick="startPreprocessing()">Start Preprocessing</button>
+                <button class="btn btn-view-file" onclick="viewFilePreview()">View File</button>
+            </div>
+        </section>
+        
+        <!-- Preprocessing Section -->
+        <section id="preprocessing-section" style="display: none;">
+            <div class="container">
+                <h2>Preprocessing...</h2>
+                <div class="loading-icon"></div>
+            </div>
+        </section>
+        
+        <section id="preprocess-report" style="display: none;">
+            <div class="container">
+                <h2>Preprocessing Report</h2>
+                <div id="fileInfoReport"></div>
+                <div id="preprocessingTechniques"></div>
+                <a id="downloadReportLink" class="btn btn-save-report" download="preprocessing_report.csv">Download Report</a>
+                <button id="viewReportBtn" class="btn btn-view-report" onclick="viewReport()">View Report</button>
+                <button id="proceedToTraining" class="btn btn-proceed-training" onclick="proceedToTraining()">Proceed to Train Model</button>
+            </div>
+        </section>
+    </section>
+<script>
+    // Retrieve file information from sessionStorage
+    var fileInfo = JSON.parse(sessionStorage.getItem('fileInfo'));
+
+    // Display file information
+    if (fileInfo) {
+        document.getElementById('fileInfo').innerHTML = 'File Information:<br>' +
+            'Name: ' + fileInfo.name + '<br>' +
+            'Size: ' + formatBytes(fileInfo.size);
+    }
+
+    document.getElementById("upload-button").addEventListener("click", function() {
+    // Get the file input
+    var fileInput = document.getElementById("upload-input");
+    // Check if the file input is not empty
+    if (fileInput.files.length > 0) {
+        // Show the upload status
+        document.getElementById("upload-status").style.display = "block";
+        // Process the dataset
+        var file = fileInput.files[0];
+        var reader = new FileReader();
+        reader.onload = function(event) {
+            var data = event.target.result;
+            // Add your dataset processing logic here
+            var processedData = processDataset(data);
+            console.log(processedData); // For testing
+            // Show the processed status
+            document.getElementById("processed-status").style.display = "block";
+
+            // Store file information in sessionStorage
+            var fileInfo = {
+                name: file.name,
+                size: file.size
+            };
+            sessionStorage.setItem('fileInfo', JSON.stringify(fileInfo));
+
+            // Start preprocessing
+            startPreprocessing(processedData);
+        };
+        reader.readAsBinaryString(file);
+    }
+});
+
+function startPreprocessing(data) {
+    // Hide main content section
+    document.getElementById('preprocessing-section').style.display = 'block';
+    document.getElementById('fileInfo').innerHTML = '';
+
+    // Show loading icon during preprocessing
+    document.querySelector('.loading-icon').innerHTML = 'Loading...';
+
+    // Simulate asynchronous preprocessing (you can replace this with actual fetch request)
+    var preprocessingTime = calculatePreprocessingTime(data.length); // Calculate dynamic preprocessing time
+    setTimeout(() => {
+        // Update the content when preprocessing is done
+        document.getElementById('preprocessing-section').style.display = 'none';
+
+        // Retrieve file information from sessionStorage
+        var fileInfo = JSON.parse(sessionStorage.getItem('fileInfo'));
+
+        // Display file information in the report
+        if (fileInfo) {
+            document.getElementById('fileInfoReport').innerHTML = 'File Information:<br>' +
+                'Name: ' + fileInfo.name + '<br>' +
+                'Size: ' + formatBytes(fileInfo.size);
+        }
+
+        // Get selected preprocessing techniques
+        var selectedTechniques = [];
+        var radios = document.querySelectorAll('input[name="techniques"]:checked');
+        radios.forEach((radio) => {
+            selectedTechniques.push(radio.value);
+        });
+
+        // Apply selected preprocessing techniques
+        selectedTechniques.forEach((technique) => {
+            data = applyTechnique(data, technique);
+        });
+
+        // Display selected preprocessing techniques
+        document.getElementById('preprocessingTechniques').innerHTML = 'Preprocessing Technique Applied:<br>' +
+            selectedTechniques.join('<br>');
+
+        // Show the preprocessing report section
+        document.getElementById('preprocess-report').style.display = 'block';
+
+        // Show the View Report button
+        document.getElementById('viewReportBtn').style.display = 'block';
+
+        var downloadLink = document.getElementById('downloadReportLink');
+        downloadLink.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(generateCSVReportContent(data));
+    }, preprocessingTime); 
+}
+
+function calculatePreprocessingTime(dataLength) {
+    return Math.min(dataLength * 0.01, 10000); 
+}
+function processDataset(data) {
+    var workbook = XLSX.read(data, {type: 'binary'});
+    var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+    var rows = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+    var headers = rows[0];
+    var jsonData = [];
+    for (var i = 1; i < rows.length; i++) {
+        var row = rows[i];
+        if (row.length === headers.length) { 
+            var obj = {};
+            for (var j = 0; j < headers.length; j++) {
+                obj[headers[j].trim()] = row[j].trim();
+            }
+            jsonData.push(obj);
+        }
+    }
+    jsonData.forEach(item => {
+        const text = item['Context(cj)'];
+        const { nounPhrases, pronouns } = preprocessText(text);
+        item['Noun Phrases'] = nounPhrases.join(', ');
+        item['Pronouns'] = pronouns.join(', ');
+    });
+
+    return jsonData;
+}
+
+function preprocessText(text) {
+    const nlp = window.nlp;
+    const doc = nlp(text);
+    const nounPhrases = doc.nouns().out('array');
+    const pronouns = doc.pronouns().out('array');
+    return { nounPhrases, pronouns };
+}
+function applyTechnique(data, technique) {
+    switch (technique) {
+        case 'fullStringMatching':
+            return data.map(item => {
+                item.fullStringMatching = fullStringMatching(item['Noun Phrases'], item['Pronouns']);
+                return item;
+            });
+        case 'headwordMatching':
+            return data.map(item => {
+                item.headwordMatching = headwordMatching(item['Noun Phrases'], item['Pronouns']);
+                return item;
+            });
+        default:
+            return data;
+    }
+}
+function fullStringMatching(np1, np2) {
+    return np1 === np2;
+}
+
+function headwordMatching(np1, np2) {
+    return np1.split()[0] === np2.split()[0];
+}
+
+function modifierMatching(np1, np2) {
+    return new Set(np1.split()).size === new Set(np2.split()).size;
+}
+
+function isDefiniteOrDemonstrativeNP(np) {
+    const doc = nlp(np);
+    return doc.match('(the|this|that|these|those)').found;
+}
+
+function isProperNameNP(np) {
+    const doc = nlp(np);
+    return doc.nouns().isProperNoun().out('array').length > 0;
+}
+
+function numberAgreementNP(np1, np2) {
+    const doc1 = nlp(np1);
+    const doc2 = nlp(np2);
+    const singular1 = doc1.nouns().isSingular().out('array').length > 0;
+    const singular2 = doc2.nouns().isSingular().out('array').length > 0;
+    return singular1 === singular2;
+}
+
+function ppAttachment(np1, np2) {
+    const doc1 = nlp(np1);
+    const doc2 = nlp(np2);
+    return doc1.match(np2).found;
+}
+
+function appositive(np1, np2) {
+    const doc1 = nlp(np1);
+    const doc2 = nlp(np2);
+    return doc1.match(`appos(${np2})`).found || doc2.match(`appos(${np1})`).found;
+}
+
+function syntacticRole(np1, np2) {
+    const doc1 = nlp(np1);
+    const doc2 = nlp(np2);
+    const roles1 = doc1.out('tags');
+    const roles2 = doc2.out('tags');
+    return JSON.stringify(roles1) === JSON.stringify(roles2);
+}
+
+function semanticClass(np1, np2) {
+    return np1.split()[0] === np2.split()[0];
+}
+
+// Antecedent Heuristics...
+function extendedNumberAgreement(np, pron) {
+    if (numberAgreement(np, pron)) {
+        return 'Y';
+    } else if (isProperName(pron)) {
+        return 'N_P';
+    } else {
+        return 'N';
+    }
+}
+
+function numberAgreement(np, pron) {
+    const docNp = nlp(np);
+    const docPron = nlp(pron);
+    return docNp.nouns().isSingular().out('array').length > 0 &&
+           docPron.pronouns().isSingular().out('array').length > 0;
+}
+
+function isProperName(pron) {
+    const doc = nlp(pron);
+    return doc.nouns().isProperNoun().out('array').length > 0;
+}
+
+function definiteness(pron) {
+    const doc = nlp(pron);
+    return doc.match('(the|this|that|these|those)').found || doc.match('(my|your|his|her|its|our|their)').found;
+}
+
+function nonPrepositional(pron) {
+    const doc = nlp(pron);
+    return !doc.match('#Preposition').found;
+}
+
+function syntacticConstraint(np, pron) {
+    const docNp = nlp(np);
+    const docPron = nlp(pron);
+    const rolesNp = docNp.out('tags');
+    const rolesPron = docPron.out('tags');
+    return JSON.stringify(rolesNp) === JSON.stringify(rolesPron);
+}
+
+function appositiveConstraint(np, pron) {
+    const docNp = nlp(np);
+    const docPron = nlp(pron);
+    return docNp.match(`appos(${pron})`).found || docPron.match(`appos(${np})`).found;
+}
+
+function semanticConstraint(np, pron) {
+    return np.split()[0] === pron.split()[0];
+}
+
+function generateCSVReportContent(data) {
+    var headers = Object.keys(data[0]).join(',');
+    var csvRows = data.map(row => {
+        return Object.values(row).join(',');
+    });
+    return [headers].concat(csvRows).join('\n');
+}
+
+function formatBytes(bytes) {
+    var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    if (bytes == 0) return '0 Byte';
+    var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+}
+
+ 
+    function viewFilePreview() {
+        var fileInfo = JSON.parse(sessionStorage.getItem('fileInfo'));
+        if (fileInfo) {
+            var fileURL = `/view_file/${encodeURIComponent(fileInfo.name)}`;
+            window.open(fileURL, '_blank'); 
+        }
+    }
+    function viewReport() {
+            const reportElement = document.getElementById('preprocess-report');
+            if (reportElement) {
+                reportElement.scrollIntoView({ behavior: 'smooth' });
+                reportElement.style.display = 'block';
+            } else {
+                console.error('Element with ID "preprocess-report" not found.');
+            }
+        }
+
+        document.getElementById('upload-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch('/preprocess_dataset', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    const reportContent = document.getElementById('report-content');
+                    reportContent.innerHTML = '';
+                    data.data.forEach(item => {
+                        reportContent.innerHTML += `<p><strong>Original:</strong> ${item.original_text}<br><strong>Preprocessed:</strong> ${item.preprocessed_text}</p>`;
+                    });
+                    viewReport();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    function generateCSVReportContent() {
+        var content = '';
+        var fileInfo = JSON.parse(sessionStorage.getItem('fileInfo'));
+        content += 'File Information,\n' +
+                   'Name,' + fileInfo.name + '\n' +
+                   'Size,' + formatBytes(fileInfo.size) + '\n\n';
+
+        content += 'Preprocessing Techniques,\n' +
+                   'Tokenization,\n' +
+                   'Stopword Removal,\n' +
+                   'Lemmatization,\n' +
+                   'Porter Stemming,\n' +
+                   'Suffix Stripping,\n';
+
+        return content;
+    }
+    function proceedToTraining() {
+        var fileInfo = JSON.parse(sessionStorage.getItem('fileInfo'));
+        var selectedTechniques = [];
+        var radios = document.querySelectorAll('input[name="techniques"]:checked');
+        radios.forEach((radio) => {
+            selectedTechniques.push(radio.value);
+        });
+        sessionStorage.setItem('reportDetails', JSON.stringify({
+            fileInfo: fileInfo,
+            techniques: selectedTechniques
+        }));
+        window.location.href = "{{ url_for('train_model') }}";
+    }
+</script>
+</body>
+</html>

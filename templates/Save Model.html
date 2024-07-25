@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.11/typed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+    <link rel="icon" href="./images/Portfolio_icon.jpeg" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style5.css') }}">
+    <title>Save Model</title>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="max-width">
+            <div class="logo"><a href="{{ url_for('index') }}">Anaphoric <span>Ambiguity Detector</span></a></div>
+        </div>
+    </nav>
+    <section class="home" id="home">
+        <div class="max-width">
+            <div class="home-content">
+                <div class="text-1">Save Model</div>
+            </div>
+            <div class="form-group">
+                <input type="text" id="fileNameInput" class="form-control mt-3" value="TrainedModelFile" readonly>
+                <div class="button-container">
+                    <button id="changeNameBtn" class="btn btn-secondary" onclick="changeFileName()">Change Name</button>
+                    <button id="saveModelBtn" class="btn btn-primary save-model-btn" onclick="saveModel()">Save Model</button>
+                </div>
+            </div>
+        </div>
+    </section>
+    <p id="saveMessage"></p>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+    var urlParams = new URLSearchParams(window.location.search);
+    var modelName = urlParams.get('modelName');
+    var modelData = urlParams.get('modelData');
+
+    if (modelName && modelData) {
+        // Parse model data
+        var parsedModelData = JSON.parse(modelData);
+        document.getElementById('fileNameInput').value = modelName.replace(/\s+/g, '_');
+
+        // Optionally, display additional model information for debugging
+        console.log('Model Name:', modelName);
+        console.log('Model Data:', parsedModelData);
+    }
+});
+
+function saveModel() {
+    console.log('Save Model button clicked.'); // Check if this message appears in the console
+
+    var fileName = document.getElementById('fileNameInput').value.trim();
+    if (fileName === '') {
+        fileName = 'trained_model';
+    }
+    var urlParams = new URLSearchParams(window.location.search);
+    var modelData = urlParams.get('modelData');
+
+    if (modelData) {
+        var parsedModelData = JSON.parse(modelData);
+        if (parsedModelData.accuracy) {
+            accuracy = parsedModelData.accuracy;
+        }
+    }
+
+    var modelDataToSave = {
+        modelName: fileName,
+        accuracy: accuracy
+    };
+
+    var jsonData = JSON.stringify(modelDataToSave);
+    var blob = new Blob([jsonData], { type: 'application/json' });
+
+    var a = document.createElement('a');
+    var url = window.URL.createObjectURL(blob);
+    a.href = url;
+    a.download = fileName + '.json';
+    document.body.appendChild(a);
+    a.click();
+
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+
+    // Display save message
+    document.getElementById('saveMessage').innerText = 'Model "' + fileName + '" has been saved with an accuracy of ' + accuracy + '.';
+}
+
+function changeFileName() {
+    var currentFileName = document.getElementById('fileNameInput').value.trim();
+    var newFileName = prompt('Enter new file name:', currentFileName);
+    if (newFileName !== null && newFileName.trim() !== '') {
+        document.getElementById('fileNameInput').value = newFileName.trim();
+    }
+}
+    </script>
+</body>
+</html>

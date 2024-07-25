@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PreProcess DataSet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style2.css') }}">
+    <script src="https://unpkg.com/compromise"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="max-width">
+            <div class="logo"><a href="{{ url_for('index') }}">Anaphoric <span>Ambiguity Detector</span></a></div>
+        </div>
+    </nav>
+    <section class="home" id="home">
+        <div class="max-width">
+            <div class="home-content">
+                <div class="text-1">PreProcess DataSet</div>
+                <div class="upload-section">
+                    <p>Upload dataset with file chooser or by dragging and dropping file onto the dashed region</p>
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <input type="file" id="fileInput" style="display: none;" onchange="handleFileUpload()">
+                        <label for="fileInput" id="chooseFileLabel" class="start-button">Choose File</label>
+                        <div id="selectedFile"></div>
+                        <button type="button" id="uploadButtonOutside" class="start-button" style="display: none;" onclick="uploadFile()">Upload File</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        function handleFileUpload() {
+            var fileInput = document.getElementById('fileInput');
+            var selectedFile = document.getElementById('selectedFile');
+            var uploadButtonOutside = document.getElementById('uploadButtonOutside');
+            var chooseFileLabel = document.getElementById('chooseFileLabel');
+            var file = fileInput.files[0];
+
+            if (file) {
+                selectedFile.innerHTML = 'Selected File: ' + file.name;
+                uploadButtonOutside.style.display = 'block'; 
+                chooseFileLabel.style.display = 'none'; 
+            } else {
+                selectedFile.innerHTML = '';
+                uploadButtonOutside.style.display = 'none'; 
+                chooseFileLabel.style.display = 'block'; 
+            }
+        }
+
+        function uploadFile() {
+            var fileInput = document.getElementById('fileInput');
+            var file = fileInput.files[0];
+
+            if (file) {
+                var formData = new FormData();
+                formData.append('file', file);
+
+                document.getElementById('selectedFile').innerHTML = 'Uploading...';
+
+                fetch('/preprocess_dataset', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        sessionStorage.setItem('fileInfo', JSON.stringify({ name: file.name, size: file.size }));
+                        window.location.href = '/file_info';
+                    } else if (data.error) {
+                        document.getElementById('selectedFile').innerHTML = 'Error: ' + data.error;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('selectedFile').innerHTML = 'Error: ' + error.message;
+                });
+            }
+        }
+    </script>
+</body>
+</html>

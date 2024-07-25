@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View File - {{ filename }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style4.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="max-width">
+            <div class="logo"><a href="{{ url_for('index') }}">Anaphoric <span>Ambiguity Detector</span></a></div>
+        </div>
+    </nav>
+    <section class="home" id="home">
+        <section>
+            <div class="container">
+                <h2>Viewing File: {{ filename }}</h2>
+                <pre>{{ content }}</pre>
+            </div>
+        </section>
+    </section>
+</body>
+</html>
