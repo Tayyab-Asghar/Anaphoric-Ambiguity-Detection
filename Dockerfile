@@ -1,16 +1,18 @@
+# Use the official Python image.
 FROM python:3.11-slim
 
-# Install torch
-RUN pip install torch torchvision cpuonly -f https://download.pytorch.org/whl/torch_stable.html
+# Set the working directory.
+WORKDIR /app
 
-# Copy requirements file
+# Copy requirements file and install dependencies.
 COPY requirements.txt .
-
-# Install dependencies
 RUN pip install -r requirements.txt
 
-# Copy application code
+# Copy the application code.
 COPY . .
 
-# Run command
-CMD ["python", "app.py"]
+# Expose the port Flask runs on.
+EXPOSE 5000
+
+# Command to run the application.
+CMD ["flask", "run", "--host=0.0.0.0"]
